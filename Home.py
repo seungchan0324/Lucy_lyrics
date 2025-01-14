@@ -39,6 +39,12 @@ div[data-testid="stMarkdownContainer"] > div {
 
 st.markdown(custom_css, unsafe_allow_html=True)
 
+# 표시용 리스트 (한국어)
+display_options = ["제목", "앨범명", "가사"]
+
+# 매핑 딕셔너리 (한국어 -> 내부 키)
+mapping = {"제목": "title", "앨범명": "album", "가사": "lyric"}
+
 
 def load_data(csv_path="Lucy.csv"):
     df = pd.read_csv(csv_path)
@@ -78,6 +84,7 @@ def main():
     def do_search():
         query = st.session_state["search_query"]  # text_input에 설정한 key
         search_by = st.session_state["search_by"]
+        search_by = mapping[search_by]
         # 필터링
         filtered = []
         for song in song_data:
@@ -89,12 +96,12 @@ def main():
 
     # 검색 기준 options
     if "search_by" not in st.session_state:
-        st.session_state["search_by"] = "title"
+        st.session_state["search_by"] = "제목"
 
     # 첫 번째 컬럼: 검색어 입력 (on_change=do_search, key="search_query")
     st.selectbox(
         "검색 기준",
-        ["title", "album", "lyric"],
+        options=display_options,
         key="search_by",
         on_change=do_search,
     )
