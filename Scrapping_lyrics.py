@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 
 
-class Extractor_BUGS:
+class Extractor_Lyrics:
 
     def __init__(self):
         Lucy_url = "https://music.bugs.co.kr/artist/80332208/tracks?type=RELEASE"

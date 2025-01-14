@@ -1,4 +1,4 @@
-from Scrapping_lyrics import Extractor_BUGS
+from Scrapping_lyrics import Extractor_Lyrics
 
-extractor = Extractor_BUGS()
+extractor = Extractor_Lyrics()
 extractor.start_crawling()
