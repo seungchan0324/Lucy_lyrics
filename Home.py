@@ -40,10 +40,15 @@ div[data-testid="stMarkdownContainer"] > div {
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # 표시용 리스트 (한국어)
-display_options = ["제목", "앨범명", "가사"]
+display_options = ["제목", "앨범명", "가사", "발매일"]
 
 # 매핑 딕셔너리 (한국어 -> 내부 키)
-mapping = {"제목": "title", "앨범명": "album", "가사": "lyric"}
+mapping = {
+    "제목": "title",
+    "앨범명": "album",
+    "가사": "lyric",
+    "발매일": "release_date",
+}
 
 
 def load_data(csv_path="Lucy.csv"):
@@ -59,6 +64,18 @@ def main():
     # DataFrame을 list of dict로 변환
     song_data = df.to_dict(orient="records")
 
+    # 세션 상태 초기화
+    if "sort_order" not in st.session_state:
+        st.session_state["sort_order"] = {
+            "alphabet": "asc",
+            "release_date": "asc",
+            "like": "asc",
+        }
+    # 세션 상태에 원본과 정렬용 데이터를 둘 다 보관
+    if "original_song_data" not in st.session_state:
+        st.session_state["original_song_data"] = song_data
+    if "sorted_song_data" not in st.session_state:
+        st.session_state["sorted_song_data"] = song_data.copy()
     if "selected_song" not in st.session_state:
         st.session_state["selected_song"] = None
     if "search_result" not in st.session_state:
@@ -68,13 +85,85 @@ def main():
     # 1. 왼쪽 사이드바 - 곡 제목 목록
     #    클릭 시 해당 곡 정보가 메인에 표시되도록
     # ───────────────────────────────────────────────────
+
+    def sort_like():
+        """오름/내림차순 토글 + 데이터 정렬"""
+        if st.session_state["sort_order"]["like"] == "asc":
+            st.session_state["sorted_song_data"] = sorted(
+                song_data, key=lambda x: int(x["like"].replace(",", ""))
+            )
+            st.session_state["sort_order"]["like"] = "desc"
+        else:
+            st.session_state["sorted_song_data"] = sorted(
+                song_data, key=lambda x: int(x["like"].replace(",", "")), reverse=True
+            )
+            st.session_state["sort_order"]["like"] = "asc"
+
+    def sort_alphabet():
+        """오름/내림차순 토글 + 데이터 정렬"""
+        if st.session_state["sort_order"]["alphabet"] == "asc":
+            st.session_state["sorted_song_data"] = sorted(
+                song_data, key=lambda x: x["title"]
+            )
+            st.session_state["sort_order"]["alphabet"] = "desc"
+        else:
+            st.session_state["sorted_song_data"] = sorted(
+                song_data, key=lambda x: x["title"], reverse=True
+            )
+            st.session_state["sort_order"]["alphabet"] = "asc"
+
+    def sort_release_date():
+        """오름/내림차순 토글 + 데이터 정렬"""
+        if st.session_state["sort_order"]["release_date"] == "asc":
+            st.session_state["sorted_song_data"] = sorted(
+                song_data, key=lambda x: x["release_date"]
+            )
+            st.session_state["sort_order"]["release_date"] = "desc"
+        else:
+            st.session_state["sorted_song_data"] = sorted(
+                song_data, key=lambda x: x["release_date"], reverse=True
+            )
+            st.session_state["sort_order"]["release_date"] = "asc"
+
+    # 곡 목록을 클릭하면 원본 순서로 되돌려주는 함수
+    def reset_to_original_order():
+        st.session_state["sorted_song_data"] = st.session_state[
+            "original_song_data"
+        ].copy()
+
     st.sidebar.title("곡 목록")
 
-    for idx, song in enumerate(song_data):
+    col1, col2, col3 = st.sidebar.columns(3)
+
+    # 아이콘은 '현재 정렬 상태'를 기준으로 보여주고자 한다면:
+    like_icon = "🔼" if st.session_state["sort_order"]["like"] == "asc" else "🔽"
+    alphabet_icon = (
+        "🔼" if st.session_state["sort_order"]["alphabet"] == "asc" else "🔽"
+    )
+    release_date_icon = (
+        "🔼" if st.session_state["sort_order"]["release_date"] == "asc" else "🔽"
+    )
+
+    col1.button(
+        f"인기 {like_icon}",
+        on_click=sort_like,
+    )
+
+    col2.button(
+        f"제목 {alphabet_icon}",
+        on_click=sort_alphabet,  # 버튼 누르면 해당 함수 호출
+    )
+
+    col3.button(
+        f"발매 {release_date_icon}",
+        on_click=sort_release_date,
+    )
+
+    # 곡 목록 출력
+    for idx, song in enumerate(st.session_state["sorted_song_data"]):
         # 곡 제목을 버튼으로 표시
         if st.sidebar.button(song["title"], key=f"sidebar_{idx}"):
             st.session_state["selected_song"] = song
-            # 검색 결과는 초기화하거나 말거나 선택할 수 있음.
             st.session_state["search_result"] = []
 
     # ───────────────────────────────────────────────────
@@ -143,14 +232,20 @@ def main():
         st.write("---")
         st.subheader("곡 상세 정보")
 
-        st.write(f"**제목**: {selected['title']}")
-
         col1, col2 = st.columns(2)
 
         with col1:
-            st.write(f"**앨범명**: {selected['album']}")
+            st.write(f"**제목**: {selected['title']}")
 
         with col2:
+            st.write(f"**발매일**: {selected['release_date']}")
+
+        col3, col4 = st.columns(2)
+
+        with col3:
+            st.write(f"**앨범명**: {selected['album']}")
+
+        with col4:
             st.write(f"**좋아요 수**: {selected['like']}")
 
         # 가사가 여러 줄일 경우를 가정하여 text_area 또는 st.write

@@ -102,7 +102,7 @@ class Extractor_Lyrics:
     def save_to_file(self, file_name, lyrics):
         file = open(f"{file_name}.csv", "w", encoding="utf-8", newline="")
         writer = csv.writer(file)
-        writer.writerow(["title", "lyric", "album", "like"])
+        writer.writerow(["title", "lyric", "album", "like", "release_date"])
 
         for lyric in lyrics:
             writer.writerow(lyric.values())
