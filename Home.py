@@ -125,12 +125,6 @@ def main():
             )
             st.session_state["sort_order"]["release_date"] = "asc"
 
-    # 곡 목록을 클릭하면 원본 순서로 되돌려주는 함수
-    def reset_to_original_order():
-        st.session_state["sorted_song_data"] = st.session_state[
-            "original_song_data"
-        ].copy()
-
     st.sidebar.title("곡 목록")
 
     col1, col2, col3 = st.sidebar.columns(3)
